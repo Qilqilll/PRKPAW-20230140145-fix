@@ -1,14 +1,23 @@
-const { Presensi } = require("../models");
+const { Presensi, User } = require("../models");
 const { Op } = require("sequelize");
 
 exports.getDailyReport = async (req, res) => {
     try {
         const { nama, tanggal } = req.query;
-        let options = { where: {} };
+        let options = {
+            where: {},
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['nama', 'email'] // Ambil nama dan email dari tabel User
+            }]
+        };
 
         if (nama) {
-            options.where.nama = {
-                [Op.like]: `%${nama}%`,
+            options.include[0].where = {
+                nama: {
+                    [Op.like]: `%${nama}%`,
+                }
             };
         }
 
@@ -23,6 +32,9 @@ exports.getDailyReport = async (req, res) => {
         }
 
         const records = await Presensi.findAll(options);
+
+        // Format output agar sesuai dengan yang diharapkan frontend (flattening object jika perlu)
+        // Tapi sebaiknya frontend yang menyesuaikan. Untuk kemudahan, kita kirim apa adanya dulu.
 
         res.json({
             reportDate: new Date().toLocaleDateString(),
